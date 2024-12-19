@@ -1,39 +1,43 @@
 import serial
 import time
-
 import matplotlib.pyplot as plt
 
 def read_serial_plot():
-    # Configure the serial port
-    ser = serial.Serial('COM3', 9600, timeout=1)
-    time.sleep(2)  # Wait for the serial connection to initialize
+    # Configure serial port
+    ser = serial.Serial('COM3', 115200, timeout=1)
+    time.sleep(2)  # Wait for serial connection to initialize
 
-    plt.ion()  # Turn on interactive mode
+    # Set up live plotting
+    plt.ion()
     fig, ax = plt.subplots()
-    line, = ax.plot([], [], 'bo')  # Blue dot for the ball position
+    line, = ax.plot([], [], 'bo')
+    ax.set_xlim(0, 1023)  # Match touchscreen range
+    ax.set_ylim(0, 1023)
 
-    ax.set_xlim(0, 100)  # Set x-axis limits
-    ax.set_ylim(0, 100)  # Set y-axis limits
+    x_data, y_data = [], []
 
-    while True:
-        try:
+    try:
+        while True:
             data = ser.readline().decode('utf-8').strip()
             if data:
-                x, y = map(float, data.split(','))
-                line.set_xdata(x)
-                line.set_ydata(y)
-                ax.draw_artist(ax.patch)
-                ax.draw_artist(line)
-                fig.canvas.flush_events()
-                fig.canvas.draw()
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            print(f"Error: {e}")
+                try:
+                    x, y = map(float, data.split(','))
+                    x_data.append(x)
+                    y_data.append(y)
 
-    ser.close()
-    plt.ioff()
-    plt.show()
+                    line.set_data(x_data, y_data)
+                    ax.relim()
+                    ax.autoscale_view()
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
+                except ValueError:
+                    print(f"Invalid data: {data}")
+    except KeyboardInterrupt:
+        print("Exiting...")
+    finally:
+        ser.close()
+        plt.ioff()
+        plt.show()
 
 if __name__ == "__main__":
     read_serial_plot()
