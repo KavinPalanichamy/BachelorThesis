@@ -39,7 +39,7 @@ double Xoffset = 500;  // X offset for touchscreen center
 double Yoffset = 500;  // Y offset for touchscreen center
 
 // PID Control Variables
-double kp = 0.1160, ki = 0.00130, kd = 0.1430;  // PID constants
+double kp = 0.1165, ki = 0.00120, kd = 0.1425;  // PID constants
 double error[2] = {0, 0};                  // Current error for X and Y directions
 double errorPrev[2];                       // Previous error for X and Y directions
 double integr[2] = {0, 0};                 // Integral terms for X and Y
@@ -167,7 +167,6 @@ void PID(double setpointX, double setpointY) {
     stepperB.setAcceleration(dynamicAccel);
     stepperC.setAcceleration(dynamicAccel);
 
-    Serial.println(String(p.x) + "," + String(p.y));
     // Pass dynamic speed and acceleration to moveTo function
     timeI = millis();
     while (millis() - timeI < 12) {
@@ -178,7 +177,7 @@ void PID(double setpointX, double setpointY) {
         break;
       }
     }
-
+    Serial.println(String(p.x) + "," + String(p.y)+","+String(positions[0])+","+String(positions[1])+","+String(positions[2]));
     lastUpdateTime = currentTime;  // Update the last update time
   } else {
     // Handle Ball Not Detected
