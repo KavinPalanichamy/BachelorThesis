@@ -39,7 +39,7 @@ double Xoffset = 500;  // X offset for touchscreen center
 double Yoffset = 500;  // Y offset for touchscreen center
 
 // PID Control Variables
-double kp = 0.1450, ki = 0.005, kd = 0.1550;  // PID constants
+double kp = 0.1480, ki = 0.00095, kd = 0.1550;  // PID constants
 double error[2] = {0, 0};                  // Current error for X and Y directions
 double errorPrev[2];                       // Previous error for X and Y directions
 double integr[2] = {0, 0};                 // Integral terms for X and Y
@@ -52,6 +52,10 @@ double angToStep = 3200.0 / 360;  // Angle-to-step conversion factor (steps per 
 bool detected = false;            // Ball detection flag
 long timeI;                       // Timing variable for delay
 unsigned long lastTime = 0;       // Timing for PID updates
+
+// Circle path setpoints
+double currentSetpointX = 0;
+double currentSetpointY = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -84,8 +88,58 @@ void setup() {
   steppers.runSpeedToPosition();  // This blocks until all steppers reach position
 }
 
+// Function to update circle path
+void updateCirclePath() {
+    static double angle = 0.0;
+    double radius = 230.0;  // Working range is [-150, 150]
+    double angularSpeed = 0.02;  // Radians per update
+    angle += angularSpeed;
+    if (angle > 2.0 * M_PI) {
+        angle -= 2.0 * M_PI;
+    }
+    currentSetpointX = radius * cos(angle);
+    currentSetpointY = radius * sin(angle);
+}
+
+// Function to update infinity path
+void updateInfinityPath() {
+    static double angle = 0.0;
+    double amp = 250.0;       // Range in [-100,100]
+    double angleStep = 0.01; // Adjust as needed
+    angle += angleStep;
+    if (angle > 2.0 * M_PI) {
+        angle -= 2.0 * M_PI;
+    }
+    
+    // Simple lemniscate-like parametric equations
+    currentSetpointX = amp * sin(angle);
+    currentSetpointY = amp * sin(angle) * cos(angle);
+}
+
+// Function to update square path continuously
+void updateSquarePath() {
+    static double t = 0.0;
+    double size = 200.0;     // Overall size of the square
+    double speed = 0.02;     // How quickly "t" advances
+    double k = 10.0;         // Corner sharpness (higher = sharper corners)
+
+    t += speed;
+    if (t > 2.0 * M_PI) {
+        t -= 2.0 * M_PI;
+    }
+
+    // Parametric equations for a continuous "square-like" path
+    double x = size * tanh(k * sin(t));
+    double y = size * tanh(k * cos(t));
+
+    currentSetpointX = x;
+    currentSetpointY = y;
+}
+
 void loop() {
-  PID(0, 0);  // Run PID control with setpoints (X: 0, Y: 0)
+    //updateInfinityPath();  // Comment this out to use square
+    updateSquarePath();      // Uncomment this to use square
+    PID(currentSetpointX, currentSetpointY);
 }
 
 // Function to calculate inverse kinematics positions
@@ -118,7 +172,7 @@ void PID(double setpointX, double setpointY) {
   if (p.x != 0) {  // Ball detected
     detected = true;
 
-    // Calculate Errors
+    // Calculate Errors using raw values instead of filtered values
     rawErrorX = Xoffset - p.x - setpointX;
     rawErrorY = Yoffset - p.y - setpointY;
     double errorZ = 4.25;
@@ -178,7 +232,7 @@ void PID(double setpointX, double setpointY) {
         break;
       }
     }
-    Serial.println(String(p.x) + "," + String(p.y)+","+String(positions[0])+","+String(positions[1])+","+String(positions[2]));
+    Serial.println(String(p.x) + "," + String(p.y)+","+String(currentSetpointX)+","+String(currentSetpointY));
     lastUpdateTime = currentTime;  // Update the last update time
   } else {
     // Handle Ball Not Detected

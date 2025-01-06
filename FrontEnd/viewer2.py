@@ -8,31 +8,34 @@ def read_serial_plot():
 
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-    # Two lines per axis: raw (red) and filtered (green)
-    line_x_raw, = ax1.plot([], [], 'r-', label='X Raw')
-    line_x_filt, = ax1.plot([], [], 'g-', label='X Filtered')
-    line_y_raw, = ax2.plot([], [], 'r-', label='Y Raw')
-    line_y_filt, = ax2.plot([], [], 'g-', label='Y Filtered')
+    
+    # Create line objects for both actual positions and setpoints
+    line_x_actual, = ax1.plot([], [], 'b-', label='Actual X Position')
+    line_x_setpoint, = ax1.plot([], [], 'r--', label='X Setpoint')
+    line_y_actual, = ax2.plot([], [], 'b-', label='Actual Y Position')
+    line_y_setpoint, = ax2.plot([], [], 'r--', label='Y Setpoint')
 
+    # Data storage
     time_data = []
-    x_data, x_filt_data = [], []
-    y_data, y_filt_data = [], []
-
-    start_time = time.time()
+    x_actual_data = []
+    y_actual_data = []
+    x_setpoint_data = []
+    y_setpoint_data = []
 
     # Configure plots
-    ax1.set_title('X Raw vs. Filtered')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('X Value')
+    ax1.set_title('X Position and Setpoint')
+    ax1.set_xlabel('Time (s)')  # Changed to seconds
+    ax1.set_ylabel('Position')
     ax1.grid(True)
     ax1.legend()
 
-    ax2.set_title('Y Raw vs. Filtered')
-    ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('Y Value')
+    ax2.set_title('Y Position and Setpoint')
+    ax2.set_xlabel('Time (s)')  # Changed to seconds
+    ax2.set_ylabel('Position')
     ax2.grid(True)
     ax2.legend()
 
+    plt.suptitle('Ball Position Tracking')
     plt.tight_layout()
     plt.ion()
     plt.show()
@@ -41,42 +44,45 @@ def read_serial_plot():
         last_update = time.time()
         while True:
             current_time = time.time()
-            # Only update every 25ms
             if current_time - last_update >= 0.025:
                 ser.flushInput()
                 data = ser.readline().decode('utf-8').strip()
 
                 if data:
                     try:
-                        # Parse rawX, rawY, xFiltered, yFiltered
-                        pX, pY, xFilt, yFilt = map(float, data.split(','))
-                        elapsed_s = current_time - start_time
-
+                        # Parse actual X, actual Y, setpoint X, setpoint Y, timestamp
+                        x_actual, y_actual, x_setpoint, y_setpoint, timestamp = map(float, data.split(','))
+                        
+                        # Convert milliseconds to seconds
+                        time_sec = timestamp / 1000.0
+                        
                         # Append data
-                        time_data.append(elapsed_s)
-                        x_data.append(pX)
-                        x_filt_data.append(xFilt)
-                        y_data.append(pY)
-                        y_filt_data.append(yFilt)
+                        time_data.append(time_sec)
+                        x_actual_data.append(x_actual)
+                        y_actual_data.append(y_actual)
+                        x_setpoint_data.append(x_setpoint)
+                        y_setpoint_data.append(y_setpoint)
 
                         # Keep last 200 points
                         if len(time_data) > 200:
                             time_data.pop(0)
-                            x_data.pop(0)
-                            x_filt_data.pop(0)
-                            y_data.pop(0)
-                            y_filt_data.pop(0)
+                            x_actual_data.pop(0)
+                            y_actual_data.pop(0)
+                            x_setpoint_data.pop(0)
+                            y_setpoint_data.pop(0)
 
                         # Update plot data
-                        line_x_raw.set_data(time_data, x_data)
-                        line_x_filt.set_data(time_data, x_filt_data)
-                        line_y_raw.set_data(time_data, y_data)
-                        line_y_filt.set_data(time_data, y_filt_data)
+                        line_x_actual.set_data(time_data, x_actual_data)
+                        line_x_setpoint.set_data(time_data, x_setpoint_data)
+                        line_y_actual.set_data(time_data, y_actual_data)
+                        line_y_setpoint.set_data(time_data, y_setpoint_data)
 
+                        # Update axes - show complete time range
                         for ax in [ax1, ax2]:
                             ax.relim()
-                            ax.autoscale_view()
-                            ax.set_xlim(0, time_data[-1])  # dynamic x-axis
+                            ax.autoscale_view(scalex=False, scaley=False)  # Disable autoscaling
+                            ax.set_xlim(min(time_data), max(time_data))  # Always show from min to current max time
+                            ax.set_ylim(-200, 200)  # New fixed Y-axis range
 
                         fig.canvas.draw()
                         fig.canvas.flush_events()
