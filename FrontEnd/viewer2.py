@@ -9,33 +9,31 @@ def read_serial_plot():
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
     
-    # Create line objects for both actual positions and setpoints
-    line_x_actual, = ax1.plot([], [], 'b-', label='Actual X Position')
-    line_x_setpoint, = ax1.plot([], [], 'r--', label='X Setpoint')
-    line_y_actual, = ax2.plot([], [], 'b-', label='Actual Y Position')
-    line_y_setpoint, = ax2.plot([], [], 'r--', label='Y Setpoint')
+    # Create line objects for error plots and reference lines
+    line_x_error, = ax1.plot([], [], 'b-', label='X Error')
+    line_y_error, = ax2.plot([], [], 'r-', label='Y Error')
+    ax1.axhline(y=0, color='k', linestyle='--')
+    ax2.axhline(y=0, color='k', linestyle='--')
 
     # Data storage
     time_data = []
-    x_actual_data = []
-    y_actual_data = []
-    x_setpoint_data = []
-    y_setpoint_data = []
+    x_error_data = []
+    y_error_data = []
 
     # Configure plots
-    ax1.set_title('X Position and Setpoint')
-    ax1.set_xlabel('Time (s)')  # Changed to seconds
-    ax1.set_ylabel('Position')
+    ax1.set_title('X Error over Time')
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel('X Error')
     ax1.grid(True)
     ax1.legend()
 
-    ax2.set_title('Y Position and Setpoint')
-    ax2.set_xlabel('Time (s)')  # Changed to seconds
-    ax2.set_ylabel('Position')
+    ax2.set_title('Y Error over Time')
+    ax2.set_xlabel('Time (s)')
+    ax2.set_ylabel('Y Error')
     ax2.grid(True)
     ax2.legend()
 
-    plt.suptitle('Ball Position Tracking')
+    plt.suptitle('Error Tracking')
     plt.tight_layout()
     plt.ion()
     plt.show()
@@ -50,39 +48,32 @@ def read_serial_plot():
 
                 if data:
                     try:
-                        # Parse actual X, actual Y, setpoint X, setpoint Y, timestamp
-                        x_actual, y_actual, x_setpoint, y_setpoint, timestamp = map(float, data.split(','))
+                        # Parse rawErrorX, rawErrorY, and timestamp
+                        x_error, y_error, timestamp = map(float, data.split(','))
                         
                         # Convert milliseconds to seconds
                         time_sec = timestamp / 1000.0
                         
                         # Append data
                         time_data.append(time_sec)
-                        x_actual_data.append(x_actual)
-                        y_actual_data.append(y_actual)
-                        x_setpoint_data.append(x_setpoint)
-                        y_setpoint_data.append(y_setpoint)
+                        x_error_data.append(x_error)
+                        y_error_data.append(y_error)
 
                         # Keep last 200 points
                         if len(time_data) > 200:
                             time_data.pop(0)
-                            x_actual_data.pop(0)
-                            y_actual_data.pop(0)
-                            x_setpoint_data.pop(0)
-                            y_setpoint_data.pop(0)
+                            x_error_data.pop(0)
+                            y_error_data.pop(0)
 
                         # Update plot data
-                        line_x_actual.set_data(time_data, x_actual_data)
-                        line_x_setpoint.set_data(time_data, x_setpoint_data)
-                        line_y_actual.set_data(time_data, y_actual_data)
-                        line_y_setpoint.set_data(time_data, y_setpoint_data)
+                        line_x_error.set_data(time_data, x_error_data)
+                        line_y_error.set_data(time_data, y_error_data)
 
                         # Update axes - show complete time range
                         for ax in [ax1, ax2]:
                             ax.relim()
-                            ax.autoscale_view(scalex=False, scaley=False)  # Disable autoscaling
-                            ax.set_xlim(min(time_data), max(time_data))  # Always show from min to current max time
-                            ax.set_ylim(-200, 200)  # New fixed Y-axis range
+                            ax.autoscale_view()
+                            ax.set_xlim(min(time_data), max(time_data))
 
                         fig.canvas.draw()
                         fig.canvas.flush_events()

@@ -136,9 +136,81 @@ void updateSquarePath() {
     currentSetpointY = y;
 }
 
+// Function to update zigzag path
+// Removed the entire updateZigZagPath function
+
+void updateZigZagPath2() {
+    static double t = 0.0;
+    double amplitude = 200.0;
+    double speed = 0.03;
+    double period = 2.0 * M_PI;
+
+    t += speed;
+    double cycle = fmod(t, period) / period;  // 0..1
+    // Triangular wave from -1..1
+    double tri1 = (cycle < 0.5) ? (4.0 * cycle - 1.0) : (3.0 - 4.0 * cycle);
+
+    // Out-of-phase triangular wave
+    double shiftedCycle = fmod(t + period / 4.0, period) / period;
+    double tri2 = (shiftedCycle < 0.5) ? (4.0 * shiftedCycle - 1.0) : (3.0 - 4.0 * shiftedCycle);
+
+    currentSetpointX = amplitude * tri1;
+    currentSetpointY = amplitude * tri2;
+}
+
+void updateEndToEndPath() {
+    static double t = 0.0;
+    double amplitude = 200.0;  // Range in [-200, 200]
+    double speed = 0.02;       // Rate of motion
+
+    t += speed;
+    if (t >= 2.0) {
+        t -= 2.0;
+    }
+
+    // Triangular wave from -1..1
+    double phase = t; // 0..2
+    double x = (phase < 1.0)
+        ? (amplitude * (2.0 * phase - 1.0))
+        : (amplitude * (1.0 - 2.0 * (phase - 1.0)));
+
+    currentSetpointX = x;
+    currentSetpointY = 0;
+}
+
+void updateSineWavePath() {
+    static double t = 0.0;
+    static bool reverse = false;
+    double frequency = 0.05;  // Adjust this value to change the frequency
+    double amplitude = 150.0;  // Adjust this value to change the amplitude
+    double xRange = 300.0;     // Total range of x-axis motion
+    double speed = 0.5;        // Speed of motion
+
+    if (reverse) {
+        t -= speed;
+        if (t <= 0) {
+            t = 0;
+            reverse = false;
+        }
+    } else {
+        t += speed;
+        if (t >= xRange) {
+            t = xRange;
+            reverse = true;
+        }
+    }
+
+    currentSetpointX = t - xRange/2;  // Center the motion around x=0
+    currentSetpointY = amplitude * sin(frequency * t);
+}
+
 void loop() {
-    //updateInfinityPath();  // Comment this out to use square
-    updateSquarePath();      // Uncomment this to use square
+    //updateCirclePath();
+    //updateInfinityPath();
+    //updateSquarePath();
+    //updateZigZagPath2();
+    //updateEndToEndPath();
+    updateSineWavePath();  // Use the new sine wave path
     PID(currentSetpointX, currentSetpointY);
 }
 
