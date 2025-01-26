@@ -39,7 +39,7 @@ double Xoffset = 500;  // X offset for touchscreen center
 double Yoffset = 500;  // Y offset for touchscreen center
 
 // PID Control Variables
-double kp = 0.1670, ki = 0.00085, kd = 0.1700;  // PID constants
+double kp = 0.1670, ki = 0.0008, kd = 0.1700;  // PID constants
 double error[2] = {0, 0};                  // Current error for X and Y directions
 double errorPrev[2];                       // Previous error for X and Y directions
 double integr[2] = {0, 0};                 // Integral terms for X and Y
