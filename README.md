@@ -1,13 +1,3 @@
----
-layout: page
-title: Ball-on-Plate Balancing System
-description: Development, implementation and Simulink simulation of a ball-on-plate balancing system using a 3RRS parallel manipulator and PID control.
-img: assets/img/7_1.jpg  # Replace with a good photo of your assembled platform
-importance: 1
-category: project gallery
-related_publications: false
----
-
 This project explores the design, construction, and control of a ball-on-plate (BPS) balancing system.  The system utilizes a 3RRS (Revolute-Revolute-Spherical) parallel manipulator as the platform, a resistive touch screen for ball position feedback, and a PID controller to achieve stable balancing and trajectory tracking. The project also includes a detailed Simulink model for simulation, analysis, and controller tuning.
 
 <div class="row justify-content-center">
